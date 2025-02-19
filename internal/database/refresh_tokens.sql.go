@@ -39,3 +39,14 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 	_, err := q.db.ExecContext(ctx, createRefreshToken, arg.Token, arg.UserID, arg.ExpiresAt)
 	return err
 }
+
+const getRefreshToken = `-- name: GetRefreshToken :one
+select expires_at from refresh_token where user_id = $1
+`
+
+func (q *Queries) GetRefreshToken(ctx context.Context, userID uuid.UUID) (time.Time, error) {
+	row := q.db.QueryRowContext(ctx, getRefreshToken, userID)
+	var expires_at time.Time
+	err := row.Scan(&expires_at)
+	return expires_at, err
+}

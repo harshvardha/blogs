@@ -13,3 +13,6 @@ values (
     NOW(),
     NOW()
 );
+
+-- name: GetRefreshToken :one
+select expires_at from refresh_token where user_id = $1;
