@@ -16,3 +16,6 @@ values (
 
 -- name: GetRefreshToken :one
 select expires_at from refresh_token where user_id = $1;
+
+-- name: UpdateRefreshToken :exec
+update refresh_token set token = $1 where user_id = $2;

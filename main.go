@@ -8,6 +8,7 @@ import (
 
 	"github.com/harshvardha/blogs/controllers"
 	"github.com/harshvardha/blogs/internal/database"
+	"github.com/harshvardha/blogs/middlewares"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -57,8 +58,13 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	// api endpoints related to user
-	mux.HandleFunc("POST /api/users/register", apiCfg.HandleUserRegistration)
+	// api endpoints for authentication
+	mux.HandleFunc("POST /api/auth/register", apiCfg.HandleUserRegistration)
+	mux.HandleFunc("POST /api/auth/login", apiCfg.HandleUserLogin)
+
+	// api endpoints for users
+	mux.HandleFunc("PUT /api/users/updateProfile", middlewares.ValidateJWT(apiCfg.HandleUpdateProfile, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("POST /api/users/follow/{followingID}", middlewares.ValidateJWT(apiCfg.HandleFollowUnFollowUser, apiCfg.JwtSecret, apiCfg.DB))
 
 	server := &http.Server{
 		Handler: mux,

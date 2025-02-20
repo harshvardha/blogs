@@ -52,18 +52,154 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 	return i, err
 }
 
-const getUser = `-- name: GetUser :one
-select id, username, email, hashed_password, created_at, updated_at from users where email = $1
+const deleteUser = `-- name: DeleteUser :one
+delete from users where id = $1
+returning id, username, email, hashed_password, created_at, updated_at
 `
 
-func (q *Queries) GetUser(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, email)
+func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, deleteUser, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Username,
 		&i.Email,
 		&i.HashedPassword,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+select id, username, email, hashed_password, created_at, updated_at from users where email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserById = `-- name: GetUserById :one
+select id, username, email, hashed_password, created_at, updated_at from users where id = $1
+`
+
+func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserFeed = `-- name: GetUserFeed :many
+select id, title, author_id, thumbnail_url, content, created_at, updated_at from blogs where author_id = (select following_id from users_follow where follower_id = $1) order by created_at
+`
+
+func (q *Queries) GetUserFeed(ctx context.Context, followerID uuid.UUID) ([]Blog, error) {
+	rows, err := q.db.QueryContext(ctx, getUserFeed, followerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Blog
+	for rows.Next() {
+		var i Blog
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.AuthorID,
+			&i.ThumbnailUrl,
+			&i.Content,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUsersByUsername = `-- name: GetUsersByUsername :many
+select id, username from users where username = $1
+`
+
+type GetUsersByUsernameRow struct {
+	ID       uuid.UUID
+	Username string
+}
+
+func (q *Queries) GetUsersByUsername(ctx context.Context, username string) ([]GetUsersByUsernameRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUsersByUsername, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUsersByUsernameRow
+	for rows.Next() {
+		var i GetUsersByUsernameRow
+		if err := rows.Scan(&i.ID, &i.Username); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateUserEmailOrUsername = `-- name: UpdateUserEmailOrUsername :one
+update users set email = $1 and username = $2, updated_at = NOW() where id = $3
+returning id, username, email, created_at, updated_at
+`
+
+type UpdateUserEmailOrUsernameParams struct {
+	Email    string
+	Username string
+	ID       uuid.UUID
+}
+
+type UpdateUserEmailOrUsernameRow struct {
+	ID        uuid.UUID
+	Username  string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) UpdateUserEmailOrUsername(ctx context.Context, arg UpdateUserEmailOrUsernameParams) (UpdateUserEmailOrUsernameRow, error) {
+	row := q.db.QueryRowContext(ctx, updateUserEmailOrUsername, arg.Email, arg.Username, arg.ID)
+	var i UpdateUserEmailOrUsernameRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
