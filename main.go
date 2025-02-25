@@ -65,6 +65,9 @@ func main() {
 	// api endpoints for users
 	mux.HandleFunc("PUT /api/users/updateProfile", middlewares.ValidateJWT(apiCfg.HandleUpdateProfile, apiCfg.JwtSecret, apiCfg.DB))
 	mux.HandleFunc("POST /api/users/follow/{followingID}", middlewares.ValidateJWT(apiCfg.HandleFollowUnFollowUser, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("DELETE /api/users/deleteAccount", middlewares.ValidateJWT(apiCfg.HandleDeleteUserAccount, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("GET /api/users/search", apiCfg.HandleSearch)
+	mux.HandleFunc("GET /api/users/feeds", middlewares.ValidateJWT(apiCfg.HandleGetUserFeeds, apiCfg.JwtSecret, apiCfg.DB))
 
 	server := &http.Server{
 		Handler: mux,
