@@ -69,6 +69,21 @@ func main() {
 	mux.HandleFunc("GET /api/users/search", apiCfg.HandleSearch)
 	mux.HandleFunc("GET /api/users/feeds", middlewares.ValidateJWT(apiCfg.HandleGetUserFeeds, apiCfg.JwtSecret, apiCfg.DB))
 
+	// api endpoints for category
+	mux.HandleFunc("POST /api/category/create", middlewares.ValidateJWT(apiCfg.HandleAddCategory, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("PUT /api/category/edit/{categoryID}", middlewares.ValidateJWT(apiCfg.HandleEditCategory, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("DELETE /api/category/delete/{categoryID}", middlewares.ValidateJWT(apiCfg.HandleRemoveCategory, apiCfg.JwtSecret, apiCfg.DB))
+
+	// api endpoints for blogs
+	mux.HandleFunc("POST /api/blogs/create", middlewares.ValidateJWT(apiCfg.HandleCreateBlog, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("PUT /api/blogs/edit/{blogID}", middlewares.ValidateJWT(apiCfg.HandleEditBlog, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("DELETE /api/blogs/delete/{blogID}", middlewares.ValidateJWT(apiCfg.HandleDeleteBlog, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("GET /api/blogs/{blogID}", middlewares.ValidateJWT(apiCfg.HandleGetBlogById, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("GET /api/blogs/all", middlewares.ValidateJWT(apiCfg.HandleGetAllBlogs, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("PUT /api/blogs/like/{blogID}", middlewares.ValidateJWT(apiCfg.HandleLikeOrUnlikeBlog, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("GET /api/blogs/search", apiCfg.HandleSearchBlog)
+	mux.HandleFunc("GET /api/blogs/category", apiCfg.HandleGetBlogsByCategory)
+
 	server := &http.Server{
 		Handler: mux,
 		Addr:    ":" + port,
