@@ -84,6 +84,13 @@ func main() {
 	mux.HandleFunc("GET /api/blogs/search", apiCfg.HandleSearchBlog)
 	mux.HandleFunc("GET /api/blogs/category", apiCfg.HandleGetBlogsByCategory)
 
+	// api endpoints for comments
+	mux.HandleFunc("POST /api/comments/create", middlewares.ValidateJWT(apiCfg.HandleCreateComment, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("PUT /api/comments/edit/{commentID}", middlewares.ValidateJWT(apiCfg.HandleEditComment, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("DELETE /api/comments/delete/{commentID}", middlewares.ValidateJWT(apiCfg.HandleDeleteComment, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("PUT /api/comments/like/{commentID}", middlewares.ValidateJWT(apiCfg.HandleLikeComment, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("GET /api/comments/all/{blogID}", middlewares.ValidateJWT(apiCfg.HandleGetAllCommentsByBlogId, apiCfg.JwtSecret, apiCfg.DB))
+
 	server := &http.Server{
 		Handler: mux,
 		Addr:    ":" + port,
