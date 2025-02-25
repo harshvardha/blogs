@@ -91,6 +91,14 @@ func main() {
 	mux.HandleFunc("PUT /api/comments/like/{commentID}", middlewares.ValidateJWT(apiCfg.HandleLikeComment, apiCfg.JwtSecret, apiCfg.DB))
 	mux.HandleFunc("GET /api/comments/all/{blogID}", middlewares.ValidateJWT(apiCfg.HandleGetAllCommentsByBlogId, apiCfg.JwtSecret, apiCfg.DB))
 
+	// api endpoints for collections
+	mux.HandleFunc("POST /api/collection/create", middlewares.ValidateJWT(apiCfg.HandleCreateCollection, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("PUT /api/collection/edit/{collectionID}", middlewares.ValidateJWT(apiCfg.HandleEditCollection, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("DELETE /api/collection/{collectionID}", middlewares.ValidateJWT(apiCfg.HandleDeleteCollection, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("GET /api/collections", middlewares.ValidateJWT(apiCfg.HandleGetAllCollectionsByUserID, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("PUT /api/collection/addBlog", middlewares.ValidateJWT(apiCfg.HandleAddBlogToCollection, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("PUT /api/collection/removeBlog", middlewares.ValidateJWT(apiCfg.HandleRemoveBlogFromCollection, apiCfg.JwtSecret, apiCfg.DB))
+
 	server := &http.Server{
 		Handler: mux,
 		Addr:    ":" + port,
