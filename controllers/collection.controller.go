@@ -143,7 +143,7 @@ func (apiCfg *ApiConfig) HandleDeleteCollection(w http.ResponseWriter, r *http.R
 
 // handler function to GetAllCollectionsByUserID
 func (apiCfg *ApiConfig) HandleGetAllCollectionsByUserID(w http.ResponseWriter, r *http.Request, user database.User, newAccessToken string) {
-	allCollections, err := apiCfg.DB.GetAllCollectionByUserId(r.Context(), user.ID)
+	allCollections, err := apiCfg.DB.GetAllCollectionsByUserId(r.Context(), user.ID)
 	if err != nil {
 		utility.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -168,6 +168,47 @@ func (apiCfg *ApiConfig) HandleGetAllCollectionsByUserID(w http.ResponseWriter, 
 	}
 
 	utility.RespondWithJson(w, http.StatusOK, collections)
+}
+
+// handler function to get all blogs by collection id
+func (apiCfg *ApiConfig) HandleGetAllBlogsByCollectionID(w http.ResponseWriter, r *http.Request, user database.User, newAccessToken string) {
+	// fetching collection id from url params
+	collectionIDString := r.URL.Query().Get("collectionID")
+	if len(collectionIDString) == 0 {
+		utility.RespondWithError(w, http.StatusBadRequest, "Invalid collection id")
+		return
+	}
+	collectionID, err := uuid.Parse(collectionIDString)
+	if err != nil {
+		utility.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// fetching all the blogs for the given collection id
+	allBlogs, err := apiCfg.DB.GetAllBlogsByCollectionId(r.Context(), collectionID)
+	if err != nil {
+		utility.RespondWithError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// creating response
+	collectionBlogs := []BlogsInCollection{}
+	for _, blog := range allBlogs {
+		collectionBlogs = append(collectionBlogs, BlogsInCollection{
+			BlogID:           blog.ID,
+			BlogTitle:        blog.Title,
+			BlogAuthorID:     blog.AuthorID,
+			BlogAuthorName:   blog.AuthorName,
+			BlogThumbnailURL: blog.ThumbnailUrl,
+			BlogContent:      blog.Content,
+			BlogCategoryID:   blog.Category,
+			BlogCategoryName: blog.CategoryName,
+			BlogCreatedAt:    blog.CreatedAt,
+			BlogUpdatedAt:    blog.UpdatedAt,
+			AccessToken:      newAccessToken,
+		})
+	}
+	utility.RespondWithJson(w, http.StatusOK, collectionBlogs)
 }
 
 // handler function to add blog to collection

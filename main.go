@@ -95,7 +95,8 @@ func main() {
 	mux.HandleFunc("POST /api/collection/create", middlewares.ValidateJWT(apiCfg.HandleCreateCollection, apiCfg.JwtSecret, apiCfg.DB))
 	mux.HandleFunc("PUT /api/collection/edit/{collectionID}", middlewares.ValidateJWT(apiCfg.HandleEditCollection, apiCfg.JwtSecret, apiCfg.DB))
 	mux.HandleFunc("DELETE /api/collection/{collectionID}", middlewares.ValidateJWT(apiCfg.HandleDeleteCollection, apiCfg.JwtSecret, apiCfg.DB))
-	mux.HandleFunc("GET /api/collections", middlewares.ValidateJWT(apiCfg.HandleGetAllCollectionsByUserID, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("GET /api/collection/all", middlewares.ValidateJWT(apiCfg.HandleGetAllCollectionsByUserID, apiCfg.JwtSecret, apiCfg.DB))
+	mux.HandleFunc("GET /api/collection/blogs", middlewares.ValidateJWT(apiCfg.HandleGetAllBlogsByCollectionID, apiCfg.JwtSecret, apiCfg.DB))
 	mux.HandleFunc("PUT /api/collection/addBlog", middlewares.ValidateJWT(apiCfg.HandleAddBlogToCollection, apiCfg.JwtSecret, apiCfg.DB))
 	mux.HandleFunc("PUT /api/collection/removeBlog", middlewares.ValidateJWT(apiCfg.HandleRemoveBlogFromCollection, apiCfg.JwtSecret, apiCfg.DB))
 
