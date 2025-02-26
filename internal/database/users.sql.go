@@ -108,7 +108,7 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 }
 
 const getUserFeed = `-- name: GetUserFeed :many
-select id, title, author_id, thumbnail_url, content, created_at, updated_at from blogs where author_id = (select following_id from users_follow where follower_id = $1) order by created_at
+select id, title, author_id, thumbnail_url, content, created_at, updated_at, category from blogs where author_id = (select following_id from users_follow where follower_id = $1) order by created_at
 `
 
 func (q *Queries) GetUserFeed(ctx context.Context, followerID uuid.UUID) ([]Blog, error) {
@@ -128,10 +128,38 @@ func (q *Queries) GetUserFeed(ctx context.Context, followerID uuid.UUID) ([]Blog
 			&i.Content,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Category,
 		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserFollowingList = `-- name: GetUserFollowingList :many
+select following_id from users_follow where follower_id = $1
+`
+
+func (q *Queries) GetUserFollowingList(ctx context.Context, followerID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.QueryContext(ctx, getUserFollowingList, followerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var following_id uuid.UUID
+		if err := rows.Scan(&following_id); err != nil {
+			return nil, err
+		}
+		items = append(items, following_id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -175,7 +203,7 @@ func (q *Queries) GetUsersByUsername(ctx context.Context, username string) ([]Ge
 }
 
 const updateUserEmailOrUsername = `-- name: UpdateUserEmailOrUsername :one
-update users set email = $1 and username = $2, updated_at = NOW() where id = $3
+update users set email = $1, username = $2, updated_at = NOW() where id = $3
 returning id, username, email, created_at, updated_at
 `
 

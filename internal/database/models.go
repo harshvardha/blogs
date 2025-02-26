@@ -19,6 +19,52 @@ type Blog struct {
 	Content      string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	Category     uuid.UUID
+}
+
+type Category struct {
+	ID           uuid.UUID
+	CategoryName string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type Collection struct {
+	ID        uuid.UUID
+	Name      string
+	UserID    uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type CollectionBlog struct {
+	CollectionID uuid.UUID
+	BlogID       uuid.UUID
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type Comment struct {
+	ID          uuid.UUID
+	Description string
+	BlogID      uuid.UUID
+	UserID      uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type CommentLike struct {
+	UserID    uuid.UUID
+	CommentID uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type Like struct {
+	UserID    uuid.UUID
+	BlogID    uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type RefreshToken struct {

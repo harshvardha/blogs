@@ -29,25 +29,14 @@ func ValidateJWT(handler authedHandler, tokenSecret string, db *database.Queries
 		claimsStruct := jwt.RegisteredClaims{}
 
 		// parsing the token string
-		token, err := jwt.ParseWithClaims(authHeader[1], &claimsStruct, func(token *jwt.Token) (interface{}, error) {
+		token, parseError := jwt.ParseWithClaims(authHeader[1], &claimsStruct, func(token *jwt.Token) (any, error) {
 			return []byte(tokenSecret), nil
 		})
-		if err != nil {
-			utility.RespondWithError(w, http.StatusUnauthorized, err.Error())
-			return
-		}
 
 		// extracting the userID from the token claims
 		userIDString, err := token.Claims.GetSubject()
 		if err != nil {
-			utility.RespondWithError(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		// extracting the expiresAt claim from token
-		expiresAt, err := token.Claims.GetExpirationTime()
-		if err != nil {
-			utility.RespondWithError(w, http.StatusBadRequest, err.Error())
+			utility.RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -63,29 +52,40 @@ func ValidateJWT(handler authedHandler, tokenSecret string, db *database.Queries
 			return
 		}
 
-		// checking if access token is still valid
-		if time.Now().After(expiresAt.Time) {
-			// checking if refresh token is expired or not
-			refreshTokenExpirationTime, err := db.GetRefreshToken(r.Context(), userID)
+		if parseError != nil {
+			// extracting the expiresAt claim from token
+			expiresAt, err := token.Claims.GetExpirationTime()
 			if err != nil {
-				utility.RespondWithError(w, http.StatusNotFound, err.Error())
+				utility.RespondWithError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
-			// if refresh token is also expired then requesting user to login again
-			// otherwise creating new access token and will send this in response from request handler
-			if time.Now().After(refreshTokenExpirationTime) {
-				utility.RespondWithError(w, http.StatusUnauthorized, "Please login again to continue")
-				return
-			} else {
-				newAccessToken, err := controllers.MakeJWT(userID, tokenSecret, time.Hour)
+			// checking if access token is still valid
+			if time.Now().After(expiresAt.Time) {
+				// checking if refresh token is expired or not
+				refreshTokenExpirationTime, err := db.GetRefreshToken(r.Context(), userID)
 				if err != nil {
-					utility.RespondWithError(w, http.StatusInternalServerError, err.Error())
+					utility.RespondWithError(w, http.StatusNotFound, err.Error())
 					return
 				}
-				handler(w, r, user, newAccessToken)
-				return
+
+				// if refresh token is also expired then requesting user to login again
+				// otherwise creating new access token and will send this in response from request handler
+				if time.Now().After(refreshTokenExpirationTime) {
+					utility.RespondWithError(w, http.StatusUnauthorized, "Please login again to continue")
+					return
+				} else {
+					newAccessToken, err := controllers.MakeJWT(userID, tokenSecret, time.Hour)
+					if err != nil {
+						utility.RespondWithError(w, http.StatusInternalServerError, err.Error())
+						return
+					}
+					handler(w, r, user, newAccessToken)
+					return
+				}
 			}
+			utility.RespondWithError(w, http.StatusUnauthorized, parseError.Error())
+			return
 		}
 
 		handler(w, r, user, "")
